@@ -4,8 +4,10 @@ const User = require('../../models/User.model');
 const bcrypt = require('bcrypt');
 const bcryptSalt = 10;
 
+const { forwardIfLogged } = require('../../configs/route-guard.config');
+
 //Login page
-router.get('/login', (req, res) => {
+router.get('/login', forwardIfLogged, (req, res) => {
   res.render('auth/login');
 });
 
@@ -21,6 +23,7 @@ router.post('/login', (req, res) => {
       }
       if (bcrypt.compareSync(password, user.password)) {
         req.session.currentUser = user;
+        // console.log('--=-=-=-=-=', req.session.currentUser);
         res.redirect('/');
       } else {
         res.render('auth/login', {
@@ -33,7 +36,7 @@ router.post('/login', (req, res) => {
 });
 
 //Register page
-router.get('/register', (req, res) => {
+router.get('/register', forwardIfLogged, (req, res) => {
   res.render('auth/register');
 });
 
@@ -41,7 +44,7 @@ router.get('/register', (req, res) => {
 router.post('/register', (req, res) => {
   const { firstName, lastName, username, password } = req.body;
   const salt = bcrypt.genSaltSync(bcryptSalt);
-  const thePassword = bcrypt.hashSync(password, salt);
+  const hashedPassword = bcrypt.hashSync(password, salt);
   User.findOne({ username: username })
     .then(user => {
       if (user !== null) {
@@ -55,7 +58,7 @@ router.post('/register', (req, res) => {
         firstName,
         lastName,
         username,
-        password: thePassword,
+        password: hashedPassword,
       })
         .then(usersFromDB => {
           // console.log('usersFromDB: ', usersFromDB);
